@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -21,8 +22,7 @@ public class CategoryDto {
 	@Builder
 	public static class CreateRequest {
 
-		private Long id;
-
+		@NonNull
 		private String name;
 
 		private String parent;
@@ -56,10 +56,11 @@ public class CategoryDto {
 			return Response.builder()
 				.id(category.getId())
 				.name(category.getName())
-				.parent(category.getParent().getName() == null ?
+				.parent(category.getParent() == null ?
 					"대분류" : category.getParent().getName())
-				.children(category.getChildren().stream().map(Category::getName)
-					.collect(Collectors.toList()))
+				.children(category.getChildren() == null ? new ArrayList<>() :
+					category.getChildren().stream().map(Category::getName)
+						.collect(Collectors.toList()))
 				.build();
 		}
 	}

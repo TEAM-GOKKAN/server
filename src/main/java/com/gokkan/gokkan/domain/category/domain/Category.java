@@ -47,6 +47,9 @@ public class Category {
 	private List<Category> children = new ArrayList<>();
 
 	public static void addRelation(Category parent, Category child) {
+		if (parent.children == null) {
+			parent.children = new ArrayList<>();
+		}
 		parent.children.add(child);
 		child.setParent(parent);
 	}
