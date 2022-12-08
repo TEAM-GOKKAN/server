@@ -132,5 +132,85 @@ class CategoryServiceTest {
 		assertEquals(categoryException.getErrorCode(), CategoryErrorCode.NOT_FOUND_PARENT_CATEGORY);
 	}
 
+	@DisplayName("02_00. read success")
+	@Test
+	public void test_02_00() {
+		//given
+		testInput();
 
+		System.out.println("=======================");
+		//when
+		Response response1 = categoryService.read("의자");
+		Response response2 = categoryService.read("책상");
+		Response response3 = categoryService.read("root");
+
+		//then
+		assertEquals(response1.getChildren().size(), 3);
+		assertEquals(response1.getName(), "의자");
+		assertEquals(response2.getChildren().size(), 4);
+		assertEquals(response2.getName(), "책상");
+		assertEquals(response3.getChildren().size(), 2);
+		assertEquals(response3.getName(), "root");
+	}
+
+	@DisplayName("02_01. read fail not found category")
+	@Test
+	public void test_02_01() {
+		//given
+
+		System.out.println("=======================");
+		//when
+		CategoryException categoryException = assertThrows(CategoryException.class,
+			() -> categoryService.read("의자"));
+
+		//then
+		assertEquals(categoryException.getErrorCode(), CategoryErrorCode.NOT_FOUND_CATEGORY);
+	}
+
+	private void testInput() {
+		categoryService.create(CreateRequest.builder()
+			.name("의자")
+			.parent(null)
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.parent("의자")
+			.name("의자1")
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.parent("의자")
+			.name("의자2")
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.parent("의자")
+			.name("의자3")
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.name("책상")
+			.parent(null)
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.parent("책상")
+			.name("책상1")
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.parent("책상")
+			.name("책상2")
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.parent("책상")
+			.name("책상3")
+			.build());
+
+		categoryService.create(CreateRequest.builder()
+			.parent("책상")
+			.name("책상4")
+			.build());
+	}
 }
