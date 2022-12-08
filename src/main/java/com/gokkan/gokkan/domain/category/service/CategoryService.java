@@ -39,4 +39,12 @@ public class CategoryService {
 
 		return CategoryDto.Response.toResponse(categoryRepository.save(category));
 	}
+
+	public CategoryDto.Response read(String name) {
+		Category category = categoryRepository.findByName(name)
+			.orElseThrow(() -> new CategoryException(CategoryErrorCode.NOT_FOUND_CATEGORY));
+
+		return CategoryDto.Response.toResponse(category);
+	}
+
 }
