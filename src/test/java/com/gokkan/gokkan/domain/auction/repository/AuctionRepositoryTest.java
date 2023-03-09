@@ -59,10 +59,9 @@ class AuctionRepositoryTest {
 	@Autowired
 	private MemberRepository memberRepository;
 
-
-	@DisplayName("01_00. searchAllFilter")
+	@DisplayName("01_01. searchAllFilter category filter")
 	@Test
-	public void test_01_00() {
+	public void test_01_01() {
 		//given
 		Category category1 = getCategory(categoryName1);
 		Category category11 = getCategory(categoryName1 + "1");
@@ -106,23 +105,194 @@ class AuctionRepositoryTest {
 
 		//when
 		Page<ListResponse> listResponses1 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category1, List.of(styleName1), null, null), PageRequest.of(0, 1));
-		Page<ListResponse> listResponses2 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category2, List.of(styleName2), null, null), PageRequest.of(0, 1));
-		Page<ListResponse> listResponses3 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category1, null, null, null), PageRequest.of(0, 1));
-		Page<ListResponse> listResponses4 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category2, null, null, null), PageRequest.of(0, 1));
-
+			getFilterListRequest(category1, null, null, null), PageRequest.of(0, 2));
+		System.out.println(listResponses1.getContent());
 		Page<ListResponse> listResponses11 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category1, List.of(styleName1), 0L, 100L), PageRequest.of(0, 1));
-		Page<ListResponse> listResponses22 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category2, List.of(styleName2), 101L, 200L), PageRequest.of(0, 1));
-		Page<ListResponse> listResponses33 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category1, null, null, 100L), PageRequest.of(0, 1));
-		Page<ListResponse> listResponses44 = auctionRepository.searchAllFilter(
-			getFilterListRequest(category2, null, 150L, null), PageRequest.of(0, 1));
+			getFilterListRequest(category11, null, null, null), PageRequest.of(0, 2));
+		System.out.println(listResponses11.getContent());
 
+		//then
+		//카테고리 : category1
+		assertEquals(listResponses1.getContent().size(), 2);
+		assertEquals(listResponses1.getTotalElements(), 4);
+		assertEquals(listResponses1.getTotalPages(), 2);
+		//카테고리 : category11
+		assertEquals(listResponses11.getContent().size(), 2);
+		assertEquals(listResponses11.getTotalElements(), 2);
+		assertEquals(listResponses11.getTotalPages(), 1);
+	}
+
+	@DisplayName("01_02. searchAllFilter style")
+	@Test
+	public void test_01_02() {
+		//given
+		Category category1 = getCategory(categoryName1);
+
+		Style style1 = getStyle(this.styleName1);
+		Style style2 = getStyle(this.styleName2);
+		Member member = getMember("member", "member@test.com");
+		member.setNickName("nickName");
+
+		Item item1 = getItem(category1, member, State.COMPLETE);
+		item1.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item1))));
+		Item item2 = getItem(category1, member, State.COMPLETE);
+		item2.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style2, item2))));
+		Item item3 = getItem(category1, member, State.COMPLETE);
+		item3.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item3), getStyleItem(style2, item3))));
+		Item item4 = getItem(category1, member, State.COMPLETE);
+		item4.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item4), getStyleItem(style2, item4))));
+
+		getAuction(item1, member, AuctionStatus.STARTED, 100L);
+		getAuction(item2, member, AuctionStatus.STARTED, 100L);
+		getAuction(item3, member, AuctionStatus.STARTED, 100L);
+		getAuction(item4, member, AuctionStatus.STARTED, 100L);
+		getAuction(item1, member, AuctionStatus.STARTED, 200L);
+		getAuction(item2, member, AuctionStatus.STARTED, 200L);
+		getAuction(item3, member, AuctionStatus.STARTED, 200L);
+		getAuction(item4, member, AuctionStatus.STARTED, 200L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+
+		//when
+		Page<ListResponse> listResponses1 = auctionRepository.searchAllFilter(
+			getFilterListRequest(category1, List.of(styleName1), null, null), PageRequest.of(0, 2));
+
+		Page<ListResponse> listResponses2 = auctionRepository.searchAllFilter(
+			getFilterListRequest(category1, List.of(styleName2), null, null), PageRequest.of(0, 2));
+
+		Page<ListResponse> listResponses12 = auctionRepository.searchAllFilter(
+			getFilterListRequest(category1, List.of(styleName2, styleName1), null, null),
+			PageRequest.of(0, 2));
+
+		//then
+		// 스타일 : styleName1
+		assertEquals(listResponses1.getContent().size(), 2);
+		assertEquals(listResponses1.getTotalElements(), 6);
+		assertEquals(listResponses1.getTotalPages(), 3);
+
+		// 스타일 : styleName2
+		assertEquals(listResponses2.getContent().size(), 2);
+		assertEquals(listResponses2.getTotalElements(), 6);
+		assertEquals(listResponses2.getTotalPages(), 3);
+
+		// 스타일 :  styleName1, styleName2
+		assertEquals(listResponses12.getContent().size(), 2);
+		assertEquals(listResponses12.getTotalElements(), 8);
+		assertEquals(listResponses12.getTotalPages(), 4);
+	}
+
+	@DisplayName("01_03. searchAllFilter price filter")
+	@Test
+	public void test_01_03() {
+		//given
+		Category category1 = getCategory(categoryName1);
+		Category category11 = getCategory(categoryName1 + "1");
+		category11.setParent(category1);
+		category1.setChildren(new ArrayList<>(List.of(category11)));
+		Category category2 = getCategory(categoryName2);
+		Category category21 = getCategory(categoryName2 + "1");
+		category21.setParent(category2);
+		category2.setChildren(new ArrayList<>(List.of(category21)));
+
+		Style style1 = getStyle(this.styleName1);
+		Style style2 = getStyle(this.styleName2);
+		Member member = getMember("member", "member@test.com");
+		member.setNickName("nickName");
+
+		Item item1 = getItem(category1, member, State.COMPLETE);
+		item1.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item1))));
+		Item item2 = getItem(category1, member, State.COMPLETE);
+		item2.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item2))));
+		Item item3 = getItem(category1, member, State.COMPLETE);
+		item3.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item3), getStyleItem(style2, item3))));
+		Item item4 = getItem(category1, member, State.COMPLETE);
+		item4.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item4), getStyleItem(style2, item4))));
+
+		getAuction(item1, member, AuctionStatus.STARTED, 100L);
+		getAuction(item2, member, AuctionStatus.STARTED, 100L);
+		getAuction(item3, member, AuctionStatus.STARTED, 100L);
+		getAuction(item4, member, AuctionStatus.STARTED, 100L);
+		getAuction(item1, member, AuctionStatus.STARTED, 200L);
+		getAuction(item2, member, AuctionStatus.STARTED, 200L);
+		getAuction(item3, member, AuctionStatus.STARTED, 200L);
+		getAuction(item4, member, AuctionStatus.STARTED, 200L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+
+		//when
+		Page<ListResponse> listResponses1 = auctionRepository.searchAllFilter(
+			getFilterListRequest(category1, null, null, 200L), PageRequest.of(0, 1));
+		Page<ListResponse> listResponses2 = auctionRepository.searchAllFilter(
+			getFilterListRequest(category1, null, 200L, 300L), PageRequest.of(0, 1));
+
+		//then
+		//min: 0, max : 200
+		assertEquals(listResponses1.getContent().size(), 1);
+		assertEquals(listResponses1.getTotalElements(), 8);
+		assertEquals(listResponses1.getTotalPages(), 8);
+		//min: 200, max : 300
+		assertEquals(listResponses2.getContent().size(), 1);
+		assertEquals(listResponses2.getTotalElements(), 4);
+		assertEquals(listResponses2.getTotalPages(), 4);
+	}
+
+	@DisplayName("01_04. searchAllFilter  orderBy filter")
+	@Test
+	public void test_01_04() {
+		//given
+		Category category1 = getCategory(categoryName1);
+		Category category11 = getCategory(categoryName1 + "1");
+		category11.setParent(category1);
+		category1.setChildren(new ArrayList<>(List.of(category11)));
+		Category category2 = getCategory(categoryName2);
+		Category category21 = getCategory(categoryName2 + "1");
+		category21.setParent(category2);
+		category2.setChildren(new ArrayList<>(List.of(category21)));
+
+		Style style1 = getStyle(this.styleName1);
+		Style style2 = getStyle(this.styleName2);
+		Member member = getMember("member", "member@test.com");
+		member.setNickName("nickName");
+
+		Item item1 = getItem(category1, member, State.COMPLETE);
+		item1.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item1))));
+		Item item2 = getItem(category2, member, State.COMPLETE);
+		item2.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style2, item2))));
+		Item item3 = getItem(category11, member, State.COMPLETE);
+		item3.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item3), getStyleItem(style2, item3))));
+		Item item4 = getItem(category21, member, State.COMPLETE);
+		item4.setStyleItems(
+			new ArrayList<>(List.of(getStyleItem(style1, item4), getStyleItem(style2, item4))));
+
+		getAuction(item1, member, AuctionStatus.STARTED, 100L);
+		getAuction(item2, member, AuctionStatus.STARTED, 100L);
+		getAuction(item3, member, AuctionStatus.STARTED, 100L);
+		getAuction(item4, member, AuctionStatus.STARTED, 100L);
+		getAuction(item1, member, AuctionStatus.STARTED, 200L);
+		getAuction(item2, member, AuctionStatus.STARTED, 200L);
+		getAuction(item3, member, AuctionStatus.STARTED, 200L);
+		getAuction(item4, member, AuctionStatus.STARTED, 200L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+		getAuction(item4, member, AuctionStatus.ENDED, 100L);
+
+		//when
 		FilterListRequest asc = getFilterListRequest(Category.builder().build(), null,
 			null, null);
 		asc.setSort(SortType.DESC);
@@ -149,38 +319,6 @@ class AuctionRepositoryTest {
 			PageRequest.of(0, 3));
 
 		//then
-		//카테고리, 스타일 필터링 테스트1
-		assertEquals(listResponses1.getContent().size(), 1);
-		assertEquals(listResponses1.getTotalElements(), 4);
-		assertEquals(listResponses1.getTotalPages(), 4);
-		//최저가, 최대가 필터링 테스트1
-		assertEquals(listResponses11.getContent().size(), 1);
-		assertEquals(listResponses11.getTotalElements(), 2);
-		assertEquals(listResponses11.getTotalPages(), 2);
-		//카테고리, 스타일  필터링 테스트2
-		assertEquals(listResponses2.getContent().size(), 1);
-		assertEquals(listResponses2.getTotalElements(), 4);
-		assertEquals(listResponses2.getTotalPages(), 4);
-		//최저가, 최대가 필터링 테스트2
-		assertEquals(listResponses22.getContent().size(), 1);
-		assertEquals(listResponses22.getTotalElements(), 2);
-		assertEquals(listResponses22.getTotalPages(), 2);
-		//카테고리, 스타일  필터링 테스트3
-		assertEquals(listResponses3.getContent().size(), 1);
-		assertEquals(listResponses3.getTotalElements(), 4);
-		assertEquals(listResponses3.getTotalPages(), 4);
-		//최저가, 최대가 필터링 테스트2
-		assertEquals(listResponses33.getContent().size(), 1);
-		assertEquals(listResponses33.getTotalElements(), 2);
-		assertEquals(listResponses33.getTotalPages(), 2);
-		//카테고리, 스타일  필터링 테스트4
-		assertEquals(listResponses4.getContent().size(), 1);
-		assertEquals(listResponses4.getTotalElements(), 4);
-		assertEquals(listResponses4.getTotalPages(), 4);
-		//최저가, 최대가 필터링 테스트2
-		assertEquals(listResponses44.getContent().size(), 1);
-		assertEquals(listResponses44.getTotalElements(), 2);
-		assertEquals(listResponses44.getTotalPages(), 2);
 		//정렬 신규등록순 테스트
 		for (int i = 0; i < listResponsesAllASC.getContent().size() - 1; i++) {
 			assertTrue(listResponsesAllASC.getContent().get(i).getAuctionEndDateTime()
